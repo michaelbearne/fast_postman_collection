@@ -1,7 +1,7 @@
 defmodule FastPostmanCollection.Config do
   alias FastPostmanCollection.GenerateCollection.Structs.Variable
-  @otp_app Mix.Project.config()[:app]
-  @file_contents Application.app_dir(@otp_app)
+  # @otp_app Mix.Project.config()[:app]
+  # @file_contents Application.app_dir(@otp_app)
   def get_pipe_tokens() do
     case Application.fetch_env(:fast_postman_collection, :pipe_tokens) do
       {:ok, value} when is_list(value) -> value
@@ -27,6 +27,12 @@ defmodule FastPostmanCollection.Config do
     case Application.fetch_env(:fast_postman_collection, :variables) do
       {:ok, value} when is_list(value) ->
         value
+
+      {:ok, {module, fun}} ->
+        apply(module, fun, [])
+
+      {:ok, {module, fun, args}} ->
+        apply(module, fun, args)
 
       :error ->
         [%Variable{key: "host", value: "http://localhost:4000"}]

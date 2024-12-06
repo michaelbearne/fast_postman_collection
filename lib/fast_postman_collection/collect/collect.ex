@@ -22,12 +22,15 @@ defmodule FastPostmanCollection.Collect do
     |> Enum.uniq()
     |> Enum.uniq_by(fn x -> x.plug end)
     |> Enum.map(&handle_generate_data(&1, router, list))
-    |> Enum.filter(&(not is_nil(&1)))
+    # |> Enum.filter(&(not is_nil(&1)))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.reject(&Enum.empty?(&1.functions))
   end
 
   defp handle_generate_data(%{plug: plug}, router, all_routes) do
     case Code.fetch_docs(plug) do
       {_, _, _, _, doc, doc_params, functions} ->
+
         functions_names = Enum.map(all_routes, & &1.plug_opts)
 
         functions_list =
@@ -44,24 +47,55 @@ defmodule FastPostmanCollection.Collect do
             %{verb: verb, path: path} =
               Enum.find(all_routes, fn x -> x.plug_opts == function_name and x.plug == plug end)
 
-            %CollectDataItem{
-              name: function_name,
-              method: verb,
-              route: path,
-              pipe_through:
-                FastPostmanCollection.Helpers.RouterInfo.route_info(
-                  router,
-                  Atom.to_string(verb)
-                  |> String.upcase(),
-                  path,
-                  "h"
-                )[:pipe_through],
-              other_variables: doc_params,
-              title: documentation_handler(doc) |> title(),
-              documentation: documentation_handler(doc) |> documentation_body(),
-              doc_params: FastPostmanCollection.CollectDataItemParams.get_from_map(doc_params)
-            }
+            if is_list(doc_params[:postman]) do
+              Enum.map(doc_params[:postman], fn postman ->
+                doc_params = Map.put(doc_params, :postman, postman)
+                doc_params = Map.merge(doc_params, doc_params[:postman] || %{})
+
+                %CollectDataItem{
+                  name: function_name,
+                  method: verb,
+                  headers: doc_params[:headers] || [],
+                  route: path,
+                  pipe_through:
+                    FastPostmanCollection.Helpers.RouterInfo.route_info(
+                      router,
+                      Atom.to_string(verb)
+                      |> String.upcase(),
+                      path,
+                      "h"
+                    )[:pipe_through],
+                  other_variables: doc_params,
+                  title:
+                    get_in(doc_params, [:postman, :name]) || documentation_handler(doc) |> title(),
+                  documentation: documentation_handler(doc) |> documentation_body(),
+                  doc_params: FastPostmanCollection.CollectDataItemParams.get_from_map(doc_params)
+                }
+              end)
+            else
+              doc_params = Map.merge(doc_params, doc_params[:postman] || %{})
+
+              %CollectDataItem{
+                name: function_name,
+                method: verb,
+                route: path,
+                pipe_through:
+                  FastPostmanCollection.Helpers.RouterInfo.route_info(
+                    router,
+                    Atom.to_string(verb)
+                    |> String.upcase(),
+                    path,
+                    "h"
+                  )[:pipe_through],
+                other_variables: doc_params,
+                title:
+                  get_in(doc_params, [:postman, :name]) || documentation_handler(doc) |> title(),
+                documentation: documentation_handler(doc) |> documentation_body(),
+                doc_params: FastPostmanCollection.CollectDataItemParams.get_from_map(doc_params)
+              }
+            end
           end)
+          |> List.flatten()
 
         %CollectDataModule{
           module: plug,

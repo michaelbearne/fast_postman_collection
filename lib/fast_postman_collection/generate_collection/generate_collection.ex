@@ -18,6 +18,7 @@ defmodule FastPostmanCollection.GenerateCollection do
       FastPostmanCollection.Helpers.Map.prepare_folder(collected_data)
       |> FastPostmanCollection.Helpers.Map.to_keyword_list()
       |> recursive_build([])
+      |> Enum.concat(get_extra_folders(attrs[:extra_folders]))
 
     %Main{
       item: folders,
@@ -32,7 +33,7 @@ defmodule FastPostmanCollection.GenerateCollection do
       when (is_list(collected_data) and is_map(attrs)) or is_list(attrs) do
     generate(collected_data, attrs)
     |> FastPostmanCollection.Helpers.Map.map_from_struct_recursive()
-    |> Jason.encode!()
+    |> Jason.encode!(pretty: true)
   end
 
   defp recursive_build([{key, value}], acc) when is_list(value) do
@@ -63,12 +64,18 @@ defmodule FastPostmanCollection.GenerateCollection do
     %Item{
       name: "#{item.title || item.name}",
       request: %Request{
-        method: item.method,
+        method: item.method |> Atom.to_string() |> String.upcase(),
         body: Body.generate(item),
         url: Url.generate(item),
-        auth: Auth.generate(item)
+        header: item.headers || []
+        # auth: Auth.generate(item)
       },
       event: Event.generate(item.doc_params)
     }
   end
+
+  def get_extra_folders(nil), do: []
+  def get_extra_folders(extra_folders) when is_list(extra_folders), do: extra_folders
+  def get_extra_folders({module, fun}), do: apply(module, fun, [])
+  def get_extra_folders({module, fun, args}), do: apply(module, fun, args)
 end

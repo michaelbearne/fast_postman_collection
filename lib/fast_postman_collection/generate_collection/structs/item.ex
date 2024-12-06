@@ -3,6 +3,9 @@ defmodule FastPostmanCollection.GenerateCollection.Structs.Item do
     :name,
     :variable,
     :event,
-    request: %FastPostmanCollection.GenerateCollection.Structs.Request{}
+    request: %FastPostmanCollection.GenerateCollection.Structs.Request{},
+    protocolProfileBehavior: %{
+      followRedirects: false
+    }
   ]
 end

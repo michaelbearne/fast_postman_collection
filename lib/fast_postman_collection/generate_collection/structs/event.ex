@@ -1,9 +1,66 @@
 defmodule FastPostmanCollection.GenerateCollection.Structs.Event do
   alias FastPostmanCollection.CollectDataItemParams
-  defstruct listen: "test", script: %{}, type: "text/javascript"
+  defstruct listen: "test", script: %{}
 
   def generate(collect_item_params = %CollectDataItemParams{}) do
     generate_auth_pre_request(collect_item_params) ++ []
+  end
+
+  def generate_auth_pre_request(%CollectDataItemParams{
+        pre_request: nil,
+        post_request: post_request
+      })
+      when is_list(post_request) do
+    [
+      %__MODULE__{
+        listen: "test",
+        script: %{
+          exec: post_request,
+          type: "text/javascript"
+        }
+      }
+    ]
+  end
+
+  def generate_auth_pre_request(%CollectDataItemParams{
+        pre_request: pre_request,
+        post_request: nil
+      })
+      when is_list(pre_request) do
+    [
+      %__MODULE__{
+        listen: "prerequest",
+        script: %{
+          exec: pre_request,
+          type: "text/javascript",
+          packages: {}
+        }
+      }
+    ]
+  end
+
+  def generate_auth_pre_request(%CollectDataItemParams{
+        pre_request: pre_request,
+        post_request: post_request
+      })
+      when is_list(pre_request) and is_list(post_request) do
+    [
+      %__MODULE__{
+        listen: "test",
+        script: %{
+          exec: post_request,
+          type: "text/javascript"
+        }
+      },
+      %__MODULE__{
+        listen: "prerequest",
+        script: %{
+          exec: pre_request,
+          type: "text/javascript",
+          packages: %{}
+        }
+      }
+    ]
   end
 
   def generate_auth_pre_request(doc_params = %CollectDataItemParams{}) do

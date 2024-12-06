@@ -9,7 +9,7 @@ defmodule FastPostmanCollection.GenerateCollection.Structs.Url do
     %__MODULE__{
       raw: ("{{host}}" <> item.route) |> String.replace(":", ""),
       path: item.route |> generate_path(),
-      host: "{{host}}",
+      host: ["{{host}}"],
       variable: doc_params.url_variable,
       query: Query.generate(doc_params)
     }

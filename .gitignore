@@ -25,3 +25,4 @@ fast_postman_collection-*.tar
 # Temporary files, for example, from tests.
 /tmp/
 Collection.json
+.DS_Store

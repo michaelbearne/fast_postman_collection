@@ -5,6 +5,7 @@ defmodule FastPostmanCollection.GenerateCollection.Structs.Body do
   defstruct mode: "raw",
             raw: "",
             formdata: "",
+            graphql: nil,
             disabled: true,
             options: %{
               raw: %{
